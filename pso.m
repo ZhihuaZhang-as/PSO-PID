@@ -1,21 +1,21 @@
+% 用粒子群算法对PID控制器的三个参数进行优化
+
 %% 清空环境
 clear
 clc
 %% 参数设置
-w = 0.6;      % 惯性因子
+% w = 0.8;      % 惯性因子
 c1 = 2;       % 加速常数
 c2 = 2;       % 加速常数
-%c1 = 2;       % 加速常数
-%c2 = 2;       % 加速常数
 Dim = 3;            % 维数
 SwarmSize = 100;    % 粒子群规模
 ObjFun = @PSO_PID;  % 待优化函数句柄
-MaxIter = 100;      % 最大迭代次数  
+MaxIter = 50;      % 最大迭代次数  
 MinFit = 0.01;       % 最小适应值 
 Vmax = 1;
 Vmin = -1;
-Ub = [20 20 20];
-Lb = [-10 -10 -10];
+Ub = [30 30 30];
+Lb = [0 0 0];
 
 %% 粒子群初始化
     Range = ones(SwarmSize,1)*(Ub-Lb);                                              %产生随机向量
@@ -23,7 +23,7 @@ Lb = [-10 -10 -10];
     VStep = rand(SwarmSize,Dim);                        % 初始化速度   维度
     fSwarm = zeros(SwarmSize,1);                                                         %适应度值的初始化  ：0
 for i=1:SwarmSize
-    i
+    disp(['粒子群初始化进度:',num2str(i)]);
     fSwarm(i,:) = feval(ObjFun,Swarm(i,:));                         % 粒子群的适应值
 end
 
@@ -43,8 +43,9 @@ K_i = zeros(1,MaxIter);
 K_d = zeros(1,MaxIter);
 while( (iter < MaxIter) && (fzbest > MinFit) )
     for j=1:SwarmSize
-        % 速度更新
-        iter,j
+%         % 速度更新
+%         disp(['循环次数：',num2str(iter),'粒子群位置：',num2str(j)]);
+        w=0.9-iter*0.8/MaxIter;
         VStep(j,:) = w*VStep(j,:) + c1*rand*(gbest(j,:) - Swarm(j,:)) + c2*rand*(zbest - Swarm(j,:));
         if VStep(j,:)>Vmax, VStep(j,:)=Vmax; end
         if VStep(j,:)<Vmin, VStep(j,:)=Vmin; end
@@ -64,9 +65,12 @@ while( (iter < MaxIter) && (fzbest > MinFit) )
         % 群体最优更新
         if fSwarm(j) < fzbest 
             zbest = Swarm(j,:);           %全体最优位置更新
-            fzbest = fSwarm(j);          %全体最有适应值更新
+            fzbest = fSwarm(j);          %全体最优适应值更新
         end
     end 
+    disp(['循环次数：',num2str(iter)]);
+    disp(['最佳适应度：',num2str(fzbest)]);
+    disp(['最佳个体：',num2str(zbest(1)),' ',num2str(zbest(2)),' ',num2str(zbest(3))]);
     iter = iter+1;                      % 迭代次数更新
     y_fitness(1,iter) = fzbest;         % 为绘图做准备
     K_p(1,iter) = zbest(1);
